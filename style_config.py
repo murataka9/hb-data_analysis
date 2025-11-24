@@ -13,14 +13,31 @@ METHODS: List[str] = ['glv_bo_hybrid', 'bo', 'cma_es', 'manual']
 # ユニバーサルデザインに配慮した色定義（青・緑系を中心に）
 # 色覚多様性に配慮し、ColorBrewerの色覚安全なパレットを参考にしています
 METHOD_COLORS: Dict[str, str] = {
-    'cma_es': '#2E86AB',      # 青系（濃い青）
-    'bo': '#06A77D',          # 緑系（エメラルドグリーン）
-    'manual': '#118AB2',      # 青系（明るい青）
-    'glv_bo_hybrid': '#4ECDC4' # 青緑系（ターコイズ）
+    'cma_es': '#0820FA',      # 青系（濃い青）
+    'bo': '#00D2E0',          # 緑系（エメラルドグリーン）
+    'manual': '#A43AD1',      # 青系（明るい青）
+    'glv_bo_hybrid': '#8EFAD5' # 青緑系（ターコイズ）
 }
 
 # 色のリスト（順序付き）
 METHOD_COLOR_LIST: List[str] = [METHOD_COLORS[method] for method in METHODS]
+
+# メソッド名の正式名マッピング
+METHOD_DISPLAY_NAMES: Dict[str, str] = {
+    'glv_bo_hybrid': 'Hummingbird',
+    'bo': 'BO',
+    'cma_es': 'CMA-ES',
+    'manual': 'Manual'
+}
+
+# 色盲対策用のパターン（ハッチング）マッピング
+# 目立たない程度の細かいパターンを使用
+METHOD_HATCH_PATTERNS: Dict[str, str] = {
+    'glv_bo_hybrid': '',      # パターンなし（ベース）
+    'bo': '...',              # 点々
+    'cma_es': '///',          # 斜線（右斜め）
+    'manual': 'xxx'           # クロス
+}
 
 # seabornスタイル設定
 def setup_seaborn_style():
@@ -93,8 +110,9 @@ GROUPED_PLOT_CONFIG = {
     'bar_err_linewidth': 2,  # groupedプロットのエラーバーの線の太さ
     'bar_dodge': True,  # groupedプロットの棒グラフのdodge設定
     'bar_errorbar': 'se',  # groupedプロットのエラーバーの種類
-    'violin_width': 0.8,  # groupedプロットのバイオリンプロットの幅
+    'violin_width': 0.85,  # groupedプロットのバイオリンプロットの幅
     'violin_dodge': True,  # groupedプロットのバイオリンプロットのdodge設定
+    'violin_gap': 0.1,  # groupedプロットのバイオリンプロットのhueグループ間の間隔（0.0-1.0、大きいほど間隔が広い）
     'violin_inner': 'box',  # groupedプロットのバイオリンプロットのinner設定
     'violin_density_norm': 'width',  # groupedプロットのバイオリンプロットのdensity_norm設定
     'violin_cut': 0.6,  # groupedプロットのバイオリンプロットのcut設定
@@ -106,10 +124,10 @@ GROUPED_PLOT_CONFIG = {
 
 # Groupedプロットのfigure size設定（データタイプ別）
 GROUPED_PLOT_FIGSIZE = {
-    'tlx': (12, 4),      # TLXのfigure size
-    'ueq': (6, 4),      # UEQのfigure size
-    'sus': (3, 4),      # SUSのfigure size
-    'original': (20, 4)  # Originalのfigure size
+    'tlx': (15, 4),      # TLXのfigure size
+    'ueq': (5, 4),      # UEQのfigure size
+    'sus': (4, 4),      # SUSのfigure size
+    'original': (22, 4)  # Originalのfigure size
 }
 
 # 単一プロットの設定（plot_violin_with_box, plot_bar_with_error用）
@@ -127,5 +145,19 @@ TLX_QUESTION_NAMES = {
     'effort': 'Effort',
     'frustration': 'Frustration',
     'overall': 'Overall'
+}
+
+# ブラケット（統計的有意性表示）の設定
+# vistats.annotate_bracketsのデフォルト設定を参考にした値
+BRACKET_CONFIG = {
+    'y_offset_base_ratio': 0.05,  # プロットの上からの開始位置（Y軸範囲に対する比率）
+    'y_spacing_ratio': 0.05,      # 各ブラケット間の間隔（Y軸範囲に対する比率、デフォルト値に近づける）
+    'bracket_height_ratio': 0.02, # ブラケットの高さ（Y軸範囲に対する比率）
+    'estimated_space_ratio': 0.1, # ブラケット用の推定空間（比較数×この比率）
+    'min_bracket_width': 0.01,    # ブラケットの最小幅（X軸範囲に対する比率、デフォルト値に近づける）
+    'fontsize': 10,               # ブラケットのテキストフォントサイズ（デフォルト値）
+    'fontweight': 'normal',        # ブラケットのテキストフォントウェイト（デフォルト値）
+    'linewidth': 1.0,             # ブラケットの線の太さ（デフォルト値）
+    'color': 'black'              # ブラケットの色
 }
 
