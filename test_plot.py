@@ -86,6 +86,14 @@ def load_data(filepath: Path) -> pd.DataFrame:
     """CSVファイルを読み込みます"""
     return pd.read_csv(filepath)
 
+def load_data_from_dir(data_dir: Path, filename: str) -> pd.DataFrame:
+    """指定されたディレクトリからデータを読み込みます"""
+    filepath = data_dir / filename
+    if filepath.exists():
+        return load_data(filepath)
+    else:
+        return pd.DataFrame()
+
 def load_combined_data(filename: str) -> pd.DataFrame:
     """designとmarioの両方のディレクトリからデータを読み込んで結合します"""
     design_file = DESIGN_DIR / filename
@@ -162,15 +170,18 @@ def plot_violin_with_box(data: pd.DataFrame, value_col: str,
         pc.set_edgecolor('none')
     
     # 色盲対策：各メソッドにパターンを追加（目立たない程度に）
-    _apply_hatch_patterns(ax, violin, 1, len(style_config.METHODS))
+    # 実際にデータに存在するメソッドのみを使用
+    actual_methods = plot_data[method_col].unique().tolist()
+    available_methods = [m for m in style_config.METHODS if m in actual_methods]
+    _apply_hatch_patterns(ax, violin, 1, len(available_methods), available_methods)
     
     # Y軸の範囲を設定
     if data_type and data_type in style_config.Y_AXIS_LIMITS:
         y_min_limit, y_max_limit = style_config.Y_AXIS_LIMITS[data_type]
         
-        # tlx以外はデータの最小値・最大値に基づいて余白を追加
-        # SUSの場合は余白を追加しない（5の上の余白をなくすため）
-        if data_type != 'tlx' and data_type != 'sus':
+        # tlx、sus、ueqは余白なしで設定値を使用
+        # originalとai_originalのみ余白を追加
+        if data_type in ['original', 'ai_original']:
             data_min = plot_data[value_col].min()
             data_max = plot_data[value_col].max()
             data_range = data_max - data_min if data_max > data_min else 1
@@ -302,7 +313,7 @@ def shorten_question_name(col_name: str, index: int, data_type: str = '') -> str
     index : int
         インデックス（1から始まる）
     data_type : str
-        データタイプ（'tlx', 'ueq', 'sus', 'original'）
+        データタイプ（'tlx', 'ueq', 'sus', 'original', 'ai_original'）
     
     Returns:
     --------
@@ -325,6 +336,10 @@ def shorten_question_name(col_name: str, index: int, data_type: str = '') -> str
     if col_name.startswith('ueq_') or col_name.startswith('sus'):
         return col_name
     
+    # originalとai_originalの場合は、常にインデックスを使用（1から振り直す）
+    if data_type in ['original', 'ai_original']:
+        return f'Q{index}'
+    
     # 数字で始まる場合は、その数字を抽出
     match = re.match(r'^(\d+)\.', col_name)
     if match:
@@ -334,7 +349,7 @@ def shorten_question_name(col_name: str, index: int, data_type: str = '') -> str
     # それ以外はインデックスを使用
     return f'Q{index}'
 
-def _apply_hatch_patterns(ax, plot_obj, n_questions, n_methods):
+def _apply_hatch_patterns(ax, plot_obj, n_questions, n_methods, available_methods=None):
     """
     色盲対策として、各メソッドにパターン（ハッチング）を追加します
     
@@ -347,14 +362,20 @@ def _apply_hatch_patterns(ax, plot_obj, n_questions, n_methods):
     n_questions : int
         質問数
     n_methods : int
-        メソッド数
+        メソッド数（実際にプロットされているメソッド数）
+    available_methods : list, optional
+        実際にプロットされているメソッドのリスト（hue_orderの順序）
+        指定がない場合はstyle_config.METHODSを使用
     """
+    if available_methods is None:
+        available_methods = style_config.METHODS
+    
     # violinplotの場合
     if hasattr(plot_obj, 'collections'):
         # collectionsから各violinのパッチを取得
         # 順序: (質問0, メソッド0), (質問0, メソッド1), ..., (質問0, メソッドN-1), (質問1, メソッド0), ...
         for question_idx in range(n_questions):
-            for method_idx, method in enumerate(style_config.METHODS):
+            for method_idx, method in enumerate(available_methods):
                 collection_idx = question_idx * n_methods + method_idx
                 if collection_idx < len(plot_obj.collections):
                     pc = plot_obj.collections[collection_idx]
@@ -369,7 +390,7 @@ def _apply_hatch_patterns(ax, plot_obj, n_questions, n_methods):
         patches = ax.patches
         # 順序: (質問0, メソッド0), (質問0, メソッド1), ..., (質問0, メソッドN-1), (質問1, メソッド0), ...
         for question_idx in range(n_questions):
-            for method_idx, method in enumerate(style_config.METHODS):
+            for method_idx, method in enumerate(available_methods):
                 patch_idx = question_idx * n_methods + method_idx
                 if patch_idx < len(patches):
                     patch = patches[patch_idx]
@@ -460,9 +481,12 @@ def _add_significance_bars(ax, question_name, methods_data, y_max, method_col='M
     if len(method_positions) < 2:
         return
     
+    # 実際にデータに存在するメソッドを取得
+    available_methods_in_question = [m for m in style_config.METHODS if m in question_data[method_col].unique()]
+    
     # 各メソッドの最大値を取得（ブラケットの高さ用）
     method_max_values = {}
-    for method in style_config.METHODS:
+    for method in available_methods_in_question:
         if method not in method_positions:
             continue
         method_data = question_data[question_data[method_col] == method]['Value']
@@ -472,11 +496,20 @@ def _add_significance_bars(ax, question_name, methods_data, y_max, method_col='M
     if len(method_max_values) < 2:
         return
     
+    # 実際にデータに存在するメソッドを取得
+    available_methods_in_question = [m for m in style_config.METHODS if m in question_data[method_col].unique()]
+    
+    if len(available_methods_in_question) < 2:
+        return
+    
     # Friedman検定を実行（有意な場合のみWilcoxon検定を実行）
-    # この質問のデータを準備
-    friedman_data = question_data[[method_col, 'Value']].copy()
-    friedman_stat, friedman_p = statistical_analysis.perform_friedman_test(
-        friedman_data, 'Value', method_col, style_config.METHODS
+    # この質問のデータを準備（UID列が存在する場合は含める）
+    friedman_cols = [method_col, 'Value']
+    if 'UID' in question_data.columns:
+        friedman_cols.append('UID')
+    friedman_data = question_data[friedman_cols].copy()
+    friedman_stat, friedman_p, kendall_w = statistical_analysis.perform_friedman_test(
+        friedman_data, 'Value', method_col, methods=available_methods_in_question
     )
     
     # Friedman検定で有意な場合のみWilcoxon検定を実行（Holm補正）
@@ -486,13 +519,37 @@ def _add_significance_bars(ax, question_name, methods_data, y_max, method_col='M
         raw_p_values = []
         comparison_info = []
         
-        for method1, method2 in itertools.combinations(style_config.METHODS, 2):
+        # UID列が存在する場合は対応データを準備
+        has_uid = 'UID' in question_data.columns
+        
+        for method1, method2 in itertools.combinations(available_methods_in_question, 2):
             if method1 not in method_max_values or method2 not in method_max_values:
                 continue
             
-            # この質問のデータのみを使用（重要：異なる質問間での比較を防ぐ）
-            group1 = question_data[question_data[method_col] == method1]['Value'].dropna().values
-            group2 = question_data[question_data[method_col] == method2]['Value'].dropna().values
+            if has_uid:
+                # 対応データを準備：両方のメソッドにデータがある被験者のみを使用
+                pivot_data = question_data.pivot_table(
+                    index='UID',
+                    columns=method_col,
+                    values='Value',
+                    aggfunc='first'
+                )
+                
+                # 両方のメソッドにデータがある被験者のみを選択
+                if method1 not in pivot_data.columns or method2 not in pivot_data.columns:
+                    continue
+                
+                paired_data = pivot_data[[method1, method2]].dropna()
+                
+                if len(paired_data) == 0:
+                    continue
+                
+                group1 = paired_data[method1].values
+                group2 = paired_data[method2].values
+            else:
+                # この質問のデータのみを使用（重要：異なる質問間での比較を防ぐ）
+                group1 = question_data[question_data[method_col] == method1]['Value'].dropna().values
+                group2 = question_data[question_data[method_col] == method2]['Value'].dropna().values
             
             if len(group1) == 0 or len(group2) == 0:
                 continue
@@ -526,7 +583,9 @@ def _add_significance_bars(ax, question_name, methods_data, y_max, method_col='M
     
     # vistatsを使う場合の準備
     # この質問内のメソッドのみを含める（異なる質問間での比較を防ぐ）
-    available_methods = [method for method in style_config.METHODS if method in method_positions]
+    # method_positionsとmethod_max_valuesの両方に存在するメソッドのみを使用
+    available_methods = [method for method in style_config.METHODS 
+                        if method in method_positions and method in method_max_values]
     if len(available_methods) < 2:
         return
     
@@ -633,7 +692,7 @@ def _draw_manual_brackets(ax, comparisons, method_positions, method_max_values, 
                clip_on=False)
 
 
-def _plot_single_grouped_bar(ax, plot_data, question_cols_subset, method_col, data_type, ylabel, start_idx=1):
+def _plot_single_grouped_bar(ax, plot_data, question_cols_subset, method_col, data_type, ylabel, start_idx=1, available_methods=None):
     """
     単一のsubplotにプロットを描画する内部関数
     
@@ -653,6 +712,8 @@ def _plot_single_grouped_bar(ax, plot_data, question_cols_subset, method_col, da
         Y軸のラベル
     start_idx : int
         質問名のインデックスの開始値（デフォルト: 1）
+    available_methods : list, optional
+        実際にデータに存在するメソッドのリスト（指定がない場合はstyle_config.METHODSを使用）
     """
     # このsubplot用のデータをフィルタ
     subplot_data = plot_data[plot_data['Question'].isin(question_cols_subset)].copy()
@@ -660,10 +721,22 @@ def _plot_single_grouped_bar(ax, plot_data, question_cols_subset, method_col, da
     if subplot_data.empty:
         return
     
+    # 実際にデータに存在するメソッドを取得
+    if available_methods is None:
+        available_methods = style_config.METHODS
+    else:
+        # データに実際に存在するメソッドのみをフィルタ
+        actual_methods = subplot_data[method_col].unique().tolist()
+        # style_config.METHODSの順序を保持しつつ、実際に存在するメソッドのみを使用
+        available_methods = [m for m in style_config.METHODS if m in actual_methods]
+    
+    if len(available_methods) == 0:
+        return
+    
     # 全てのデータタイプでバイオリンプロットを使用
     violin_config = get_violin_config_for_grouped()
     violin = sns.violinplot(data=subplot_data, x='Question', y='Value', hue=method_col,
-                           hue_order=style_config.METHODS,
+                           hue_order=available_methods,
                            palette=style_config.METHOD_COLORS,
                            ax=ax,
                            **violin_config)
@@ -674,16 +747,16 @@ def _plot_single_grouped_bar(ax, plot_data, question_cols_subset, method_col, da
             pc.set_edgecolor('none')
     
     # 色盲対策：各メソッドにパターンを追加（目立たない程度に）
-    _apply_hatch_patterns(ax, violin, len(question_cols_subset), len(style_config.METHODS))
+    _apply_hatch_patterns(ax, violin, len(question_cols_subset), len(available_methods), available_methods)
     
     # Y軸の範囲を設定
     y_max = None
     if data_type and data_type in style_config.Y_AXIS_LIMITS:
         y_min_limit, y_max_limit = style_config.Y_AXIS_LIMITS[data_type]
         
-        # tlx以外はデータの最小値・最大値に基づいて余白を追加
-        # SUSの場合は余白を追加しない（5の上の余白をなくすため）
-        if data_type != 'tlx' and data_type != 'sus':
+        # tlx、sus、ueqは余白なしで設定値を使用
+        # originalとai_originalのみ余白を追加
+        if data_type in ['original', 'ai_original']:
             data_min = subplot_data['Value'].min()
             data_max = subplot_data['Value'].max()
             data_range = data_max - data_min if data_max > data_min else 1
@@ -704,7 +777,7 @@ def _plot_single_grouped_bar(ax, plot_data, question_cols_subset, method_col, da
             if abs(data_max - y_max_limit) < 0.1:
                 y_max = y_max_limit
         else:
-            # tlxとsusは余白なしで設定値を使用
+            # tlx、sus、ueqは余白なしで設定値を使用
             y_min, y_max = y_min_limit, y_max_limit
         
         # 設定された範囲を超えないようにする（重要：ブラケット用の余白を追加しても範囲を超えない）
@@ -740,7 +813,9 @@ def _plot_single_grouped_bar(ax, plot_data, question_cols_subset, method_col, da
 
 def _perform_statistical_tests(data: pd.DataFrame, question_cols: list,
                                method_col: str, title: str, data_type: str,
-                               log_file: Optional[Path] = None):
+                               log_file: Optional[Path] = None,
+                               output_dir: Optional[Path] = None,
+                               dataset_name: str = ''):
     """
     統計検定を実行してログに保存します（プロットとは分離）
     
@@ -758,11 +833,48 @@ def _perform_statistical_tests(data: pd.DataFrame, question_cols: list,
         データタイプ
     log_file : Optional[Path]
         ログファイルのパス
+    output_dir : Optional[Path]
+        出力ディレクトリのパス（デフォルト: OUTPUT_DIR）
     """
     if log_file is None:
         return
     
-    qq_output_dir = OUTPUT_DIR / 'qq_plots'
+    if output_dir is None:
+        output_dir = OUTPUT_DIR
+    
+    # 質問一覧ファイルをCSVで作成
+    # originalとai_originalの場合は、それぞれ1から振り直す
+    questions_list = []
+    for idx, col in enumerate(question_cols, start=1):
+        # originalとai_originalの場合は、常に1から始まる番号を使用
+        if data_type in ['original', 'ai_original']:
+            question_number = idx  # 1から始まる連番
+        else:
+            question_number = idx  # 通常も1から始まる
+        
+        question_name = shorten_question_name(col, question_number, data_type)
+        
+        # Full_Questionには実際の質問文（列名）を保存
+        # 列名が質問文そのものの場合、そのまま使用
+        full_question = col
+        
+        questions_list.append({
+            'Question_Number': f'Q{question_number}',
+            'Column_Name': col,
+            'Question_Name': question_name,
+            'Full_Question': full_question
+        })
+    
+    questions_df = pd.DataFrame(questions_list)
+    # dataset_nameを含めてファイル名を作成
+    if dataset_name:
+        questions_csv_path = output_dir / f'questions_list_{title.lower().replace(" ", "_")}_{dataset_name}.csv'
+    else:
+        questions_csv_path = output_dir / f'questions_list_{title.lower().replace(" ", "_")}.csv'
+    questions_df.to_csv(questions_csv_path, index=False, encoding='utf-8-sig')
+    print(f"質問一覧を保存: {questions_csv_path}")
+    
+    qq_output_dir = output_dir / 'qq_plots'
     qq_output_dir.mkdir(parents=True, exist_ok=True)
     
     # Q-Q plotフォルダ内のログファイル
@@ -775,13 +887,20 @@ def _perform_statistical_tests(data: pd.DataFrame, question_cols: list,
     
     for idx, col in enumerate(question_cols, start=1):
         question_name = shorten_question_name(col, idx, data_type)
-        question_data = data[[method_col, col]].dropna(subset=[col])
+        # UID列が存在する場合は含める
+        base_cols = [method_col, col]
+        if 'UID' in data.columns:
+            base_cols.insert(1, 'UID')  # UIDをmethod_colの後に挿入
+        question_data = data[base_cols].dropna(subset=[col])
         
         if len(question_data) == 0:
             continue
         
+        # 実際にデータに存在するメソッドを取得
+        available_methods_for_qq = [m for m in style_config.METHODS if m in question_data[method_col].unique()]
+        
         # Q-Q plotを各メソッドごとに作成し、正規性検定を実行
-        for method in style_config.METHODS:
+        for method in available_methods_for_qq:
             method_data = question_data[question_data[method_col] == method][col].dropna().values
             if len(method_data) > 0:
                 # Q-Q plotを作成
@@ -802,33 +921,55 @@ def _perform_statistical_tests(data: pd.DataFrame, question_cols: list,
                     data_name, is_normal, statistic, p_value, qq_log_file
                 )
         
-        # Friedman検定を実行（全ての結果をログに出力）
-        friedman_stat, friedman_p = statistical_analysis.perform_friedman_test(
-            question_data, col, method_col, style_config.METHODS
-        )
+        # 実際にデータに存在するメソッドを取得
+        available_methods = [m for m in style_config.METHODS if m in question_data[method_col].unique()]
         
-        data_name = f"{title} {question_name}"
-        
-        # Friedman検定の結果を常にログに追加
-        with open(log_file, 'a', encoding='utf-8') as f:
-            f.write(f"\n{'='*80}\n")
-            f.write(f"{data_name} (Friedman test)\n")
-            f.write(f"{'='*80}\n\n")
-            if not np.isnan(friedman_stat):
-                f.write(f"Friedman test: statistic={friedman_stat:.4f}, p-value={statistical_analysis.format_p_value(friedman_p)}\n")
-            else:
-                f.write(f"Friedman test: 検定不可（データ不足）\n")
-            f.write("\n")
-        
-        # Friedman検定で有意な場合のみWilcoxon検定を実行（Holm補正）
-        if not np.isnan(friedman_stat) and friedman_p < 0.05:
+        # 条件数が2以下の場合はFriedman検定をスキップして直接Wilcoxon検定を実行
+        if len(available_methods) <= 2:
+            data_name = f"{title} {question_name}"
+            
+            # 2条件の場合は直接Wilcoxon検定を実行（Holm補正）
+            with open(log_file, 'a', encoding='utf-8') as f:
+                f.write(f"\n{'='*80}\n")
+                f.write(f"{data_name} (Wilcoxon signed-rank test)\n")
+                f.write(f"{'='*80}\n\n")
+                f.write(f"条件数が2以下のため、Friedman検定をスキップしてWilcoxon検定を実行\n\n")
+            
             results_df = statistical_analysis.analyze_group_comparisons(
-                question_data, col, method_col, style_config.METHODS
+                question_data, col, method_col, methods=available_methods
             )
             if not results_df.empty:
                 # Holm補正を適用
                 results_df = statistical_analysis.apply_holm_correction(results_df)
                 statistical_analysis.save_statistical_results(results_df, log_file, data_name)
+        else:
+            # 3条件以上の場合はFriedman検定を実行
+            friedman_stat, friedman_p, kendall_w = statistical_analysis.perform_friedman_test(
+                question_data, col, method_col, methods=available_methods
+            )
+            
+            data_name = f"{title} {question_name}"
+            
+            # Friedman検定の結果を常にログに追加
+            with open(log_file, 'a', encoding='utf-8') as f:
+                f.write(f"\n{'='*80}\n")
+                f.write(f"{data_name} (Friedman test)\n")
+                f.write(f"{'='*80}\n\n")
+                if not np.isnan(friedman_stat):
+                    f.write(f"Friedman test: statistic={friedman_stat:.4f}, p-value={statistical_analysis.format_p_value(friedman_p)}, Kendall's W={kendall_w:.4f}\n")
+                else:
+                    f.write(f"Friedman test: 検定不可（データ不足）\n")
+                f.write("\n")
+            
+            # Friedman検定で有意な場合のみWilcoxon検定を実行（Holm補正）
+            if not np.isnan(friedman_stat) and friedman_p < 0.05:
+                results_df = statistical_analysis.analyze_group_comparisons(
+                    question_data, col, method_col, methods=available_methods
+                )
+                if not results_df.empty:
+                    # Holm補正を適用
+                    results_df = statistical_analysis.apply_holm_correction(results_df)
+                    statistical_analysis.save_statistical_results(results_df, log_file, data_name)
 
 
 def plot_grouped_bar(data: pd.DataFrame, question_cols: list,
@@ -836,7 +977,9 @@ def plot_grouped_bar(data: pd.DataFrame, question_cols: list,
                      title: str = '',
                      ylabel: str = 'Score',
                      data_type: str = '',
-                     log_file: Optional[Path] = None):
+                     log_file: Optional[Path] = None,
+                     output_dir: Optional[Path] = None,
+                     dataset_name: str = ''):
     """
     複数の質問を1つのプロットにまとめ、質問ごとにhueで表示します
     
@@ -861,8 +1004,8 @@ def plot_grouped_bar(data: pd.DataFrame, question_cols: list,
     else:
         figsize = style_config.GROUPED_PLOT_CONFIG['figure.figsize']
     
-    # originalの場合は2段のsubplotを作成
-    if data_type == 'original' and len(question_cols) > 1:
+    # originalとai_originalの場合は2段のsubplotを作成
+    if data_type in ['original', 'ai_original'] and len(question_cols) > 1:
         # 半分で割って、割り切れない場合は1段目が1つ多い
         n_cols = len(question_cols)
         n_first_row = (n_cols + 1) // 2  # 切り上げ
@@ -892,8 +1035,12 @@ def plot_grouped_bar(data: pd.DataFrame, question_cols: list,
         plot_data = pd.concat(plot_data_list, ignore_index=True)
         plot_data = plot_data.dropna(subset=['Value'])
         
+        # 実際にデータに存在するメソッドを取得
+        actual_methods = plot_data[method_col].unique().tolist()
+        available_methods = [m for m in style_config.METHODS if m in actual_methods]
+        
         # 統計検定を実行（プロットとは分離）
-        _perform_statistical_tests(data, question_cols, method_col, title, data_type, log_file)
+        _perform_statistical_tests(data, question_cols, method_col, title, data_type, log_file, output_dir, dataset_name)
         
         # 1段目と2段目の質問名リストを作成
         first_row_question_names = [shorten_question_name(col, idx, data_type) 
@@ -903,12 +1050,12 @@ def plot_grouped_bar(data: pd.DataFrame, question_cols: list,
         
         # 1段目をプロット
         _plot_single_grouped_bar(axes[0], plot_data, first_row_question_names, 
-                                method_col, data_type, ylabel)
+                                method_col, data_type, ylabel, available_methods=available_methods)
         axes[0].set_title(title)
         
         # 2段目をプロット
         _plot_single_grouped_bar(axes[1], plot_data, second_row_question_names, 
-                                method_col, data_type, ylabel)
+                                method_col, data_type, ylabel, available_methods=available_methods)
         
         plt.tight_layout()
         return fig, axes
@@ -918,9 +1065,14 @@ def plot_grouped_bar(data: pd.DataFrame, question_cols: list,
         
         # データをロングフォーマットに変換
         plot_data_list = []
+        # UID列が存在する場合は含める
+        base_cols = [method_col]
+        if 'UID' in data.columns:
+            base_cols.append('UID')
+        
         for idx, col in enumerate(question_cols, start=1):
             if col in data.columns:
-                col_data = data[[method_col, col]].copy()
+                col_data = data[base_cols + [col]].copy()
                 # 質問名を短縮
                 short_name = shorten_question_name(col, idx, data_type)
                 col_data['Question'] = short_name
@@ -933,27 +1085,48 @@ def plot_grouped_bar(data: pd.DataFrame, question_cols: list,
         plot_data = pd.concat(plot_data_list, ignore_index=True)
         plot_data = plot_data.dropna(subset=['Value'])
         
+        # 実際にデータに存在するメソッドを取得
+        actual_methods = plot_data[method_col].unique().tolist()
+        available_methods = [m for m in style_config.METHODS if m in actual_methods]
+        
         # 統計検定を実行（プロットとは分離）
-        _perform_statistical_tests(data, question_cols, method_col, title, data_type, log_file)
+        _perform_statistical_tests(data, question_cols, method_col, title, data_type, log_file, output_dir, dataset_name)
         
         # プロットを描画
         question_names = [shorten_question_name(col, idx, data_type) for idx, col in enumerate(question_cols, start=1)]
-        _plot_single_grouped_bar(ax, plot_data, question_names, method_col, data_type, ylabel)
+        _plot_single_grouped_bar(ax, plot_data, question_names, method_col, data_type, ylabel, available_methods=available_methods)
         ax.set_title(title)
         plt.tight_layout()
         return fig, ax
 
-def create_legend():
-    """凡例を別ファイルとして作成します"""
+def create_legend(output_dir: Optional[Path] = None, dataset_name: str = ''):
+    """
+    凡例を別ファイルとして作成します
+    
+    Parameters:
+    -----------
+    output_dir : Optional[Path]
+        出力ディレクトリのパス（デフォルト: OUTPUT_DIR）
+    dataset_name : str
+        データセット名（'design'の場合はBOをPBOに変更）
+    """
+    if output_dir is None:
+        output_dir = OUTPUT_DIR
+    
     fig, ax = plt.subplots(figsize=(4, 2))
     
     # 凡例用のパッチを作成
     from matplotlib.patches import Patch
     legend_elements = []
     for method in style_config.METHODS:
+        # designデータの場合はBOをPBOに変更
+        display_name = style_config.METHOD_DISPLAY_NAMES.get(method, method)
+        if dataset_name == 'design' and method == 'bo':
+            display_name = 'PBO'
+        
         patch = Patch(facecolor=style_config.METHOD_COLORS[method], 
                      edgecolor='black', linewidth=1.5, 
-                     label=style_config.METHOD_DISPLAY_NAMES.get(method, method))
+                     label=display_name)
         # 色盲対策：凡例にもパターンを追加
         hatch_pattern = style_config.METHOD_HATCH_PATTERNS.get(method, '')
         if hatch_pattern:
@@ -968,14 +1141,187 @@ def create_legend():
     ax.axis('off')
     
     plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / 'legend.pdf', dpi=300, bbox_inches='tight', 
+    if dataset_name:
+        legend_path = output_dir / f'legend_{dataset_name}.pdf'
+    else:
+        legend_path = output_dir / 'legend.pdf'
+    plt.savefig(legend_path, dpi=300, bbox_inches='tight', 
                 facecolor='white', edgecolor='none')
-    print(f"保存: {OUTPUT_DIR}/legend.pdf")
+    print(f"保存: {legend_path}")
     plt.close()
 
-def test_plots():
-    """テスト用のプロットを生成します"""
+def generate_plots(data_dir: Path, output_dir: Path, dataset_name: str = ''):
+    """
+    指定されたデータディレクトリからプロットを生成します
     
+    Parameters:
+    -----------
+    data_dir : Path
+        データディレクトリのパス（designまたはmario）
+    output_dir : Path
+        出力ディレクトリのパス
+    dataset_name : str
+        データセット名（ログファイル名などに使用）
+    """
+    # 統計検定結果のログファイル
+    if dataset_name:
+        log_file = output_dir / f'statistical_results_{dataset_name}.log'
+    else:
+        log_file = output_dir / 'statistical_results.log'
+    # ログファイルを初期化
+    if log_file.exists():
+        log_file.unlink()
+    
+    # 凡例を作成（データセットごとに）
+    legend_filename = f'legend_{dataset_name}.pdf' if dataset_name else 'legend.pdf'
+    if not (output_dir / legend_filename).exists():
+        create_legend(output_dir, dataset_name)
+    
+    # NASA-TLXデータでテスト（エラーバー付き棒グラフ）
+    print(f"NASA-TLXデータでテスト中... ({dataset_name})")
+    tlx_df = load_data_from_dir(data_dir, 'nasa-tlx.csv')
+    if not tlx_df.empty:
+        print(f"データ形状: {tlx_df.shape}")
+        print(f"メソッド: {tlx_df['Method'].unique()}")
+        
+        # overallスコアでテスト
+        if 'overall' in tlx_df.columns:
+            fig, ax = plot_bar_with_error(tlx_df, 'overall', 
+                                         title='NASA-TLX Overall Score',
+                                         ylabel='Overall Score',
+                                         data_type='tlx')
+            output_path = output_dir / f'test_tlx_overall_{dataset_name}.pdf' if dataset_name else output_dir / 'test_tlx_overall.pdf'
+            plt.savefig(output_path, dpi=300, bbox_inches='tight')
+            print(f"保存: {output_path}")
+            plt.close()
+        
+        # 各サブスケールを1つのプロットにまとめる（質問ごとのhueで表示）
+        tlx_columns = ['mental', 'physical', 'temporal', 'performance', 'effort', 'frustration', 'overall']
+        available_cols = [col for col in tlx_columns if col in tlx_df.columns]
+        if available_cols:
+            fig, ax = plot_grouped_bar(tlx_df, available_cols,
+                                      title='NASA-TLX',
+                                      ylabel='Score',
+                                      data_type='tlx',
+                                      log_file=log_file,
+                                      output_dir=output_dir,
+                                      dataset_name=dataset_name)
+            output_path = output_dir / f'test_tlx_grouped_{dataset_name}.pdf' if dataset_name else output_dir / 'test_tlx_grouped.pdf'
+            plt.savefig(output_path, dpi=300, bbox_inches='tight')
+            print(f"保存: {output_path}")
+            plt.close()
+    
+    # SUSデータでテスト（groupedプロット、SUSスコア1つ）
+    print(f"\nSUSデータでテスト中... ({dataset_name})")
+    sus_file = data_dir / 'sus.csv'
+    if sus_file.exists():
+        sus_df_raw = load_data(sus_file)
+        # SUSスコアに変換
+        sus_df = sus_processor.calculate_sus_score(sus_df_raw)
+        if not sus_df.empty:
+            print(f"データ形状: {sus_df.shape}")
+            print(f"メソッド: {sus_df['Method'].unique()}")
+            
+            # SUS_Scoreの1列のみを使用
+            sus_columns = ['SUS_Score']
+            if 'SUS_Score' in sus_df.columns:
+                fig, ax = plot_grouped_bar(sus_df, sus_columns,
+                                         title='SUS',
+                                         ylabel='Score',
+                                         data_type='sus',
+                                         log_file=log_file,
+                                         output_dir=output_dir,
+                                         dataset_name=dataset_name)
+                output_path = output_dir / f'test_sus_grouped_{dataset_name}.pdf' if dataset_name else output_dir / 'test_sus_grouped.pdf'
+                plt.savefig(output_path, dpi=300, bbox_inches='tight')
+                print(f"保存: {output_path}")
+                plt.close()
+    
+    # UEQ-Sデータでテスト（groupedプロット、PQとHQの2尺度）
+    print(f"\nUEQ-Sデータでテスト中... ({dataset_name})")
+    ueq_file = data_dir / 'ueq-short.csv'
+    if ueq_file.exists():
+        ueq_df_raw = load_data(ueq_file)
+        # PQとHQに変換
+        ueq_df = ueq_processor.calculate_ueq_scales(ueq_df_raw)
+        if not ueq_df.empty:
+            print(f"データ形状: {ueq_df.shape}")
+            print(f"メソッド: {ueq_df['Method'].unique()}")
+            
+            # PQとHQの2列のみを使用
+            ueq_columns = ['PQ', 'HQ']
+            if all(col in ueq_df.columns for col in ueq_columns):
+                fig, ax = plot_grouped_bar(ueq_df, ueq_columns,
+                                         title='UEQ-S',
+                                         ylabel='Score',
+                                         data_type='ueq',
+                                         log_file=log_file,
+                                         output_dir=output_dir,
+                                         dataset_name=dataset_name)
+                output_path = output_dir / f'test_ueq_grouped_{dataset_name}.pdf' if dataset_name else output_dir / 'test_ueq_grouped.pdf'
+                plt.savefig(output_path, dpi=300, bbox_inches='tight')
+                print(f"保存: {output_path}")
+                plt.close()
+    
+    # AIオリジナルデータでテスト（groupedプロット）
+    print(f"\nAIオリジナルデータでテスト中... ({dataset_name})")
+    ai_original_file = data_dir / 'original' / 'ai.csv'
+    if ai_original_file.exists():
+        ai_original_df = load_data(ai_original_file)
+        if not ai_original_df.empty:
+            print(f"データ形状: {ai_original_df.shape}")
+            print(f"メソッド: {ai_original_df['Method'].unique()}")
+            
+            ai_original_columns = get_data_columns(ai_original_df)
+            if ai_original_columns:
+                fig, ax = plot_grouped_bar(ai_original_df, ai_original_columns,
+                                         title='AI Original',
+                                         ylabel='Score',
+                                         data_type='ai_original',
+                                         log_file=log_file,
+                                         output_dir=output_dir,
+                                         dataset_name=dataset_name)
+                output_path = output_dir / f'test_ai_original_grouped_{dataset_name}.pdf' if dataset_name else output_dir / 'test_ai_original_grouped.pdf'
+                plt.savefig(output_path, dpi=300, bbox_inches='tight')
+                print(f"保存: {output_path}")
+                plt.close()
+        else:
+            print(f"警告: {ai_original_file} は空です")
+    else:
+        print(f"情報: {ai_original_file} が見つかりません（スキップ）")
+    
+    # オリジナルデータでテスト（groupedプロット）
+    print(f"\nオリジナルデータでテスト中... ({dataset_name})")
+    original_original_file = data_dir / 'original' / 'original.csv'
+    if original_original_file.exists():
+        original_original_df = load_data(original_original_file)
+        if not original_original_df.empty:
+            print(f"データ形状: {original_original_df.shape}")
+            print(f"メソッド: {original_original_df['Method'].unique()}")
+            
+            original_original_columns = get_data_columns(original_original_df)
+            if original_original_columns:
+                fig, ax = plot_grouped_bar(original_original_df, original_original_columns,
+                                         title='Original',
+                                         ylabel='Score',
+                                         data_type='original',
+                                         log_file=log_file,
+                                         output_dir=output_dir,
+                                         dataset_name=dataset_name)
+                output_path = output_dir / f'test_original_grouped_{dataset_name}.pdf' if dataset_name else output_dir / 'test_original_grouped.pdf'
+                plt.savefig(output_path, dpi=300, bbox_inches='tight')
+                print(f"保存: {output_path}")
+                plt.close()
+        else:
+            print(f"警告: {original_original_file} は空です")
+    else:
+        print(f"情報: {original_original_file} が見つかりません（スキップ）")
+
+def test_plots():
+    """テスト用のプロットを生成します（designとmarioの両方を結合）"""
+    generate_plots(DESIGN_DIR, OUTPUT_DIR, 'combined')
+    
+    # designとmarioの両方のデータを結合して処理
     # 統計検定結果のログファイル
     log_file = OUTPUT_DIR / 'statistical_results.log'
     # ログファイルを初期化
@@ -1010,7 +1356,8 @@ def test_plots():
                                       title='NASA-TLX',
                                       ylabel='Score',
                                       data_type='tlx',
-                                      log_file=log_file)
+                                      log_file=log_file,
+                                      output_dir=OUTPUT_DIR)
             plt.savefig(OUTPUT_DIR / 'test_tlx_grouped.pdf', dpi=300, bbox_inches='tight')
             print(f"保存: {OUTPUT_DIR}/test_tlx_grouped.pdf")
             plt.close()
@@ -1034,7 +1381,8 @@ def test_plots():
                                          title='SUS',
                                          ylabel='Score',
                                          data_type='sus',
-                                         log_file=log_file)
+                                         log_file=log_file,
+                                         output_dir=OUTPUT_DIR)
                 plt.savefig(OUTPUT_DIR / 'test_sus_grouped.pdf', dpi=300, bbox_inches='tight')
                 print(f"保存: {OUTPUT_DIR}/test_sus_grouped.pdf")
                 plt.close()
@@ -1058,7 +1406,8 @@ def test_plots():
                                          title='UEQ-S',
                                          ylabel='Score',
                                          data_type='ueq',
-                                         log_file=log_file)
+                                         log_file=log_file,
+                                         output_dir=OUTPUT_DIR)
                 plt.savefig(OUTPUT_DIR / 'test_ueq_grouped.pdf', dpi=300, bbox_inches='tight')
                 print(f"保存: {OUTPUT_DIR}/test_ueq_grouped.pdf")
                 plt.close()
@@ -1076,7 +1425,8 @@ def test_plots():
                                      title='Original',
                                      ylabel='Score',
                                      data_type='original',
-                                     log_file=log_file)
+                                     log_file=log_file,
+                                     output_dir=OUTPUT_DIR)
             plt.savefig(OUTPUT_DIR / 'test_original_grouped.pdf', dpi=300, bbox_inches='tight')
             print(f"保存: {OUTPUT_DIR}/test_original_grouped.pdf")
             plt.close()

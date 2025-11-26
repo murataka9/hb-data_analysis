@@ -107,14 +107,18 @@ def calculate_cohens_d(group1: np.ndarray, group2: np.ndarray) -> float:
 def perform_wilcoxon_test(group1: np.ndarray, group2: np.ndarray, 
                          alternative: str = 'two-sided') -> Tuple[float, float]:
     """
-    Wilcoxon検定を実行します（対応のあるデータの場合）
+    Wilcoxon検定を実行します（対応のあるデータ用）
+    
+    注意：この関数は対応データが既に準備されていることを前提としています。
+    データの長さが異なる場合はMann-Whitney U検定を使用しますが、
+    通常は対応データを準備してから呼び出すべきです。
     
     Parameters:
     -----------
     group1 : np.ndarray
-        グループ1のデータ
+        グループ1のデータ（対応データを想定）
     group2 : np.ndarray
-        グループ2のデータ
+        グループ2のデータ（対応データを想定）
     alternative : str
         検定の種類（'two-sided', 'less', 'greater'）
     
@@ -177,9 +181,10 @@ def format_p_value(p_value: float) -> str:
 
 def analyze_group_comparisons(data: pd.DataFrame, value_col: str, 
                               method_col: str = 'Method',
+                              subject_col: str = 'UID',
                               methods: Optional[List[str]] = None) -> pd.DataFrame:
     """
-    グループ間の比較を行い、統計検定の結果を返します
+    グループ間の比較を行い、統計検定の結果を返します（対応のあるデータ用）
     
     Parameters:
     -----------
@@ -189,6 +194,8 @@ def analyze_group_comparisons(data: pd.DataFrame, value_col: str,
         値の列名
     method_col : str
         メソッド列名（デフォルト: 'Method'）
+    subject_col : str
+        被験者ID列名（デフォルト: 'UID'）
     methods : Optional[List[str]]
         比較するメソッドのリスト（Noneの場合は全て）
     
@@ -202,10 +209,50 @@ def analyze_group_comparisons(data: pd.DataFrame, value_col: str,
     
     results = []
     
+    # 被験者ID列が存在する場合は対応データを準備
+    has_subject_id = subject_col in data.columns
+    
     # 全てのペアの組み合わせ
     for method1, method2 in itertools.combinations(methods, 2):
-        group1 = data[data[method_col] == method1][value_col].dropna().values
-        group2 = data[data[method_col] == method2][value_col].dropna().values
+        if has_subject_id:
+            # 対応データを準備：両方のメソッドにデータがある被験者のみを使用
+            # ピボットテーブルを作成
+            pivot_data = data.pivot_table(
+                index=subject_col,
+                columns=method_col,
+                values=value_col,
+                aggfunc='first'
+            )
+            
+            # 両方のメソッドにデータがある被験者のみを選択
+            # 表記揺れに対応：ピボットテーブルの列に存在するかチェック
+            available_methods_in_pivot = pivot_data.columns.tolist()
+            
+            # method1とmethod2が実際にピボットテーブルに存在するか確認
+            # 表記揺れに対応（例：cma_esとcma-es）
+            method1_actual = None
+            method2_actual = None
+            
+            for m in available_methods_in_pivot:
+                if m == method1 or m.replace('-', '_') == method1 or m.replace('_', '-') == method1:
+                    method1_actual = m
+                if m == method2 or m.replace('-', '_') == method2 or m.replace('_', '-') == method2:
+                    method2_actual = m
+            
+            if method1_actual is None or method2_actual is None:
+                continue
+            
+            paired_data = pivot_data[[method1_actual, method2_actual]].dropna()
+            
+            if len(paired_data) == 0:
+                continue
+            
+            group1 = paired_data[method1_actual].values
+            group2 = paired_data[method2_actual].values
+        else:
+            # 被験者IDがない場合は従来の方法
+            group1 = data[data[method_col] == method1][value_col].dropna().values
+            group2 = data[data[method_col] == method2][value_col].dropna().values
         
         if len(group1) == 0 or len(group2) == 0:
             continue
@@ -214,7 +261,7 @@ def analyze_group_comparisons(data: pd.DataFrame, value_col: str,
         mean1, std1 = np.mean(group1), np.std(group1, ddof=1)
         mean2, std2 = np.mean(group2), np.std(group2, ddof=1)
         
-        # Wilcoxon検定
+        # Wilcoxon検定（対応ありのデータを想定）
         statistic, p_value = perform_wilcoxon_test(group1, group2)
         
         # Cohen's d
@@ -255,9 +302,10 @@ def analyze_group_comparisons(data: pd.DataFrame, value_col: str,
 
 def perform_friedman_test(data: pd.DataFrame, value_col: str, 
                           method_col: str = 'Method',
-                          methods: Optional[List[str]] = None) -> Tuple[float, float]:
+                          subject_col: str = 'UID',
+                          methods: Optional[List[str]] = None) -> Tuple[float, float, float]:
     """
-    Friedman検定を実行します
+    Friedman検定を実行します（対応のあるデータ用）
     
     Parameters:
     -----------
@@ -267,39 +315,93 @@ def perform_friedman_test(data: pd.DataFrame, value_col: str,
         値の列名
     method_col : str
         メソッド列名
+    subject_col : str
+        被験者ID列名（デフォルト: 'UID'）
     methods : Optional[List[str]]
         比較するメソッドのリスト（Noneの場合は全て）
     
     Returns:
     --------
-    Tuple[float, float]
-        (統計量, p値)
+    Tuple[float, float, float]
+        (統計量, p値, KendallのW)
     """
     if methods is None:
         methods = data[method_col].unique().tolist()
     
-    # 各メソッドのデータを取得
-    method_data_list = []
+    # 被験者ID列が存在するか確認
+    if subject_col not in data.columns:
+        # 被験者IDがない場合は、従来の方法にフォールバック
+        # （警告：これは正しいFriedman検定ではない）
+        method_data_list = []
+        for method in methods:
+            method_data = data[data[method_col] == method][value_col].dropna().values
+            if len(method_data) > 0:
+                method_data_list.append(method_data)
+        
+        if len(method_data_list) < 3:
+            return np.nan, 1.0, np.nan
+        
+        min_len = min(len(d) for d in method_data_list)
+        method_data_list = [d[:min_len] for d in method_data_list]
+        
+        try:
+            statistic, p_value = friedmanchisquare(*method_data_list)
+            # KendallのWを計算: W = Q / (k * (n - 1))
+            k = len(method_data_list)  # 条件数（メソッド数）
+            n = min_len  # 被験者数
+            kendall_w = statistic / (k * (n - 1)) if n > 1 else np.nan
+            return statistic, p_value, kendall_w
+        except ValueError:
+            return np.nan, 1.0, np.nan
+    
+    # 被験者ごとに各メソッドのデータを取得
+    # ピボットテーブルを作成：被験者を行、メソッドを列とする
+    pivot_data = data.pivot_table(
+        index=subject_col,
+        columns=method_col,
+        values=value_col,
+        aggfunc='first'  # 重複がある場合は最初の値を使用
+    )
+    
+    # 指定されたメソッドのみを選択（表記揺れに対応）
+    available_methods = []
+    available_methods_in_pivot = pivot_data.columns.tolist()
+    
     for method in methods:
-        method_data = data[data[method_col] == method][value_col].dropna().values
-        if len(method_data) > 0:
-            method_data_list.append(method_data)
+        # 完全一致を優先
+        if method in available_methods_in_pivot:
+            available_methods.append(method)
+        else:
+            # 表記揺れに対応（例：cma_esとcma-es）
+            for m in available_methods_in_pivot:
+                if m.replace('-', '_') == method or m.replace('_', '-') == method:
+                    available_methods.append(m)
+                    break
     
-    if len(method_data_list) < 3:
-        return np.nan, 1.0
+    if len(available_methods) < 3:
+        return np.nan, 1.0, np.nan
     
-    # データの長さを揃える（最短の長さに合わせる）
-    min_len = min(len(d) for d in method_data_list)
-    method_data_list = [d[:min_len] for d in method_data_list]
+    pivot_data = pivot_data[available_methods]
+    
+    # 全てのメソッドにデータがある被験者のみを保持（完全な対応データ）
+    pivot_data = pivot_data.dropna()
+    
+    if len(pivot_data) < 3:  # 被験者数が3未満の場合は検定不可
+        return np.nan, 1.0, np.nan
+    
+    # 各メソッドのデータをリストに変換（被験者の順序を保持）
+    method_data_list = [pivot_data[method].values for method in available_methods]
     
     # Friedman検定を実行
     try:
         statistic, p_value = friedmanchisquare(*method_data_list)
+        # KendallのWを計算: W = Q / (k * (n - 1))
+        k = len(available_methods)  # 条件数（メソッド数）
+        n = len(pivot_data)  # 被験者数
+        kendall_w = statistic / (k * (n - 1)) if n > 1 else np.nan
+        return statistic, p_value, kendall_w
     except ValueError:
-        # データが不足している場合
-        return np.nan, 1.0
-    
-    return statistic, p_value
+        return np.nan, 1.0, np.nan
 
 
 def apply_holm_correction(results_df: pd.DataFrame, alpha: float = 0.05) -> pd.DataFrame:
@@ -350,7 +452,8 @@ def format_result_string(row: pd.Series, data_name: str = '') -> str:
     std1 = row['std1']
     mean2 = row['mean2']
     std2 = row['std2']
-    p_value = row['p_value']
+    # 補正後のp値（p_adjusted）を優先的に使用
+    p_value = row.get('p_adjusted', row.get('p_value', 1.0))
     cohens_d = row['cohens_d']
     
     # 方向性に応じて順序を決定

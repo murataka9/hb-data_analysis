@@ -5,6 +5,7 @@
 
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
 from typing import Dict, List
 
 # メソッド名の定義（順序も定義）
@@ -39,11 +40,28 @@ METHOD_HATCH_PATTERNS: Dict[str, str] = {
     'manual': 'xxx'           # クロス
 }
 
+# Helvetica Neue Lightフォントの設定
+HELVETICA_NEUE_LIGHT = FontProperties(family='sans-serif', weight='light')
+# 利用可能なフォントを確認してHelvetica Neue Lightを優先
+try:
+    from matplotlib.font_manager import findfont, FontProperties
+    # Helvetica Neue Lightを探す
+    helvetica_light = FontProperties(family='Helvetica Neue', weight='light')
+    test_font = findfont(helvetica_light)
+    if 'Helvetica' in test_font or 'helvetica' in test_font.lower():
+        HELVETICA_NEUE_LIGHT = FontProperties(family='Helvetica Neue', weight='light')
+except:
+    # フォールバック: 通常のHelvetica Neue
+    HELVETICA_NEUE_LIGHT = FontProperties(family='Helvetica Neue')
+
 # seabornスタイル設定
 def setup_seaborn_style():
     """seabornのスタイルを設定します"""
     sns.set_style("whitegrid")
     sns.set_palette(METHOD_COLOR_LIST)
+    # フォント設定（Helvetica Neue Light）
+    plt.rcParams['font.family'] = 'sans-serif'
+    plt.rcParams['font.sans-serif'] = ['Helvetica Neue', 'Helvetica', 'Arial', 'DejaVu Sans']
     # フォントサイズの設定
     plt.rcParams['font.size'] = 15
     plt.rcParams['axes.labelsize'] = 16
@@ -52,6 +70,11 @@ def setup_seaborn_style():
     plt.rcParams['ytick.labelsize'] = 15
     plt.rcParams['legend.fontsize'] = 15
     plt.rcParams['figure.titlesize'] = 18
+    # 細めのフォントウェイトを設定（可能な場合）
+    try:
+        plt.rcParams['font.weight'] = 'light'
+    except:
+        pass
 
 # プロットの共通設定
 PLOT_CONFIG = {
@@ -65,10 +88,11 @@ PLOT_CONFIG = {
 
 # Y軸の範囲設定（データタイプ別）
 Y_AXIS_LIMITS = {
-    'tlx': (0, 80),      # NASA-TLX: 0-100
+    'tlx': (0, 100),      # NASA-TLX: 0-100
     'ueq': (1, 7),        # UEQ-S: 1-7
     'sus': (0, 100),      # SUS: 0-100
-    'original': (1, 5)    # Original: 1-5
+    'original': (1, 5),   # Original: 1-5
+    'ai_original': (1, 5) # AI Original: 1-5
 }
 
 # バイオリンプロットの設定
@@ -90,10 +114,11 @@ BAR_PLOT_CONFIG = {
 
 # Y軸の刻み設定（データタイプ別）
 Y_AXIS_TICKS = {
-    'tlx': 20,      # NASA-TLX: 20刻み
-    'ueq': 1,       # UEQ-S: 1刻み
-    'sus': 20,      # SUS: 20刻み（0-100の範囲）
-    'original': 1   # Original: 1刻み
+    'tlx': 20,         # NASA-TLX: 20刻み
+    'ueq': 1,          # UEQ-S: 1刻み
+    'sus': 20,         # SUS: 20刻み（0-100の範囲）
+    'original': 1,     # Original: 1刻み
+    'ai_original': 1   # AI Original: 1刻み
 }
 
 # プロット間の間隔設定（狭くする）
@@ -124,10 +149,11 @@ GROUPED_PLOT_CONFIG = {
 
 # Groupedプロットのfigure size設定（データタイプ別）
 GROUPED_PLOT_FIGSIZE = {
-    'tlx': (15, 4),      # TLXのfigure size
-    'ueq': (5, 4),      # UEQのfigure size
-    'sus': (4, 4),      # SUSのfigure size
-    'original': (22, 4)  # Originalのfigure size
+    'tlx': (15, 4),         # TLXのfigure size
+    'ueq': (5, 4),          # UEQのfigure size
+    'sus': (3, 4),          # SUSのfigure size
+    'original': (22, 4),    # Originalのfigure size
+    'ai_original': (15, 4)  # AI Originalのfigure size
 }
 
 # 単一プロットの設定（plot_violin_with_box, plot_bar_with_error用）
