@@ -1,0 +1,191 @@
+================================================================================
+Statistical Test Results: Best HB vs Other Users
+================================================================================
+
+Statistical Tests Performed:
+- Mann-Whitney U Test (two-sided)
+- Effect Size (r): r = Z / sqrt(N)
+
+Significance Levels:
+- *** p < 0.01
+- **  p < 0.05
+- *   p < 0.1
+- ns  p ≥ 0.1
+
+Effect Size Interpretation (r):
+- |r| < 0.1: Small
+- 0.1 ≤ |r| < 0.3: Medium
+- 0.3 ≤ |r| < 0.5: Large
+- |r| ≥ 0.5: Very Large
+
+================================================================================
+Detailed Results
+================================================================================
+
+Metric: Max Playability
+--------------------------------------------------------------------------------
+  Best HB:
+    n = 5
+    Mean = 89.400
+    Median = 95.000
+    SD = 8.764
+  Other:
+    n = 15
+    Mean = 79.000
+    Median = 80.000
+    SD = 9.614
+
+  Mann-Whitney U Test:
+    U statistic = 61.500
+    p-value = 0.0393
+    Significance: **
+
+  Effect Size:
+    r = 0.4684
+    Effect size: Large
+
+================================================================================
+
+Metric: Combined Playability
+--------------------------------------------------------------------------------
+  Best HB:
+    n = 5
+    Mean = 5898.600
+    Median = 6276.000
+    SD = 2378.813
+  Other:
+    n = 15
+    Mean = 1288.400
+    Median = 1348.000
+    SD = 390.591
+
+  Mann-Whitney U Test:
+    U statistic = 75.000
+    p-value = 0.0001
+    Significance: ***
+
+  Effect Size:
+    r = 0.7319
+    Effect size: Very Large
+
+================================================================================
+
+Metric: Total Data Count
+--------------------------------------------------------------------------------
+  Best HB:
+    n = 5
+    Mean = 83.800
+    Median = 87.000
+    SD = 35.556
+  Other:
+    n = 15
+    Mean = 18.533
+    Median = 18.000
+    SD = 5.489
+
+  Mann-Whitney U Test:
+    U statistic = 75.000
+    p-value = 0.0012
+    Significance: ***
+
+  Effect Size:
+    r = 0.7319
+    Effect size: Very Large
+
+================================================================================
+
+Metric: Standard Usage (%)
+--------------------------------------------------------------------------------
+  Best HB:
+    n = 5
+    Mean = 27.136
+    Median = 33.333
+    SD = 18.329
+  Other:
+    n = 15
+    Mean = 14.492
+    Median = 0.000
+    SD = 19.035
+
+  Mann-Whitney U Test:
+    U statistic = 51.500
+    p-value = 0.2072
+    Significance: ns
+
+  Effect Size:
+    r = 0.2733
+    Effect size: Medium
+
+================================================================================
+
+Metric: Bold Usage (%)
+--------------------------------------------------------------------------------
+  Best HB:
+    n = 5
+    Mean = 43.662
+    Median = 37.500
+    SD = 13.488
+  Other:
+    n = 15
+    Mean = 53.979
+    Median = 50.000
+    SD = 33.526
+
+  Mann-Whitney U Test:
+    U statistic = 34.000
+    p-value = 0.7920
+    Significance: ns
+
+  Effect Size:
+    r = -0.0683
+    Effect size: Small
+
+================================================================================
+
+Metric: Cautious Usage (%)
+--------------------------------------------------------------------------------
+  Best HB:
+    n = 5
+    Mean = 29.202
+    Median = 25.000
+    SD = 10.395
+  Other:
+    n = 15
+    Mean = 31.529
+    Median = 33.333
+    SD = 29.446
+
+  Mann-Whitney U Test:
+    U statistic = 34.500
+    p-value = 0.8255
+    Significance: ns
+
+  Effect Size:
+    r = -0.0586
+    Effect size: Small
+
+================================================================================
+
+Metric: Alpha Changes Count
+--------------------------------------------------------------------------------
+  Best HB:
+    n = 5
+    Mean = 9.200
+    Median = 9.000
+    SD = 4.382
+  Other:
+    n = 15
+    Mean = 4.400
+    Median = 3.000
+    SD = 4.171
+
+  Mann-Whitney U Test:
+    U statistic = 60.000
+    p-value = 0.0520
+    Significance: *
+
+  Effect Size:
+    r = 0.4392
+    Effect size: Large
+
+================================================================================

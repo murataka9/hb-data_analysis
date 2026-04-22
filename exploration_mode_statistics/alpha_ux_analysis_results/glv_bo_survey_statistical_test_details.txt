@@ -1,0 +1,215 @@
+================================================================================
+Statistical Test Results: HB Selected vs Other Users
+================================================================================
+
+Statistical Tests Performed:
+- Mann-Whitney U Test (two-sided)
+- Effect Size (r): r = Z / sqrt(N)
+
+Significance Levels:
+- *** p < 0.01
+- **  p < 0.05
+- *   p < 0.1
+- ns  p ≥ 0.1
+
+Effect Size Interpretation (r):
+- |r| < 0.1: Small
+- 0.1 ≤ |r| < 0.3: Medium
+- 0.3 ≤ |r| < 0.5: Large
+- |r| ≥ 0.5: Very Large
+
+================================================================================
+Detailed Results
+================================================================================
+
+Metric: Standard Usage (%)
+--------------------------------------------------------------------------------
+  HB Selected:
+    n = 11
+    Mean = 12.716
+    Median = 0.000
+    SD = 17.678
+  Other:
+    n = 16
+    Mean = 17.491
+    Median = 9.091
+    SD = 19.446
+
+  Mann-Whitney U Test:
+    U statistic = 77.000
+    p-value = 0.5679
+    Significance: ns
+
+  Effect Size:
+    r = -0.1045
+    Effect size: Medium
+
+================================================================================
+
+Metric: Bold Usage (%)
+--------------------------------------------------------------------------------
+  HB Selected:
+    n = 11
+    Mean = 50.451
+    Median = 50.000
+    SD = 25.511
+  Other:
+    n = 16
+    Mean = 54.912
+    Median = 44.444
+    SD = 29.889
+
+  Mann-Whitney U Test:
+    U statistic = 92.000
+    p-value = 0.8616
+    Significance: ns
+
+  Effect Size:
+    r = 0.0380
+    Effect size: Small
+
+================================================================================
+
+Metric: Cautious Usage (%)
+--------------------------------------------------------------------------------
+  HB Selected:
+    n = 11
+    Mean = 36.833
+    Median = 33.333
+    SD = 25.097
+  Other:
+    n = 16
+    Mean = 27.598
+    Median = 23.611
+    SD = 23.794
+
+  Mann-Whitney U Test:
+    U statistic = 105.500
+    p-value = 0.3967
+    Significance: ns
+
+  Effect Size:
+    r = 0.1662
+    Effect size: Medium
+
+================================================================================
+
+Metric: Alpha Changes Count
+--------------------------------------------------------------------------------
+  HB Selected:
+    n = 11
+    Mean = 5.000
+    Median = 3.000
+    SD = 4.290
+  Other:
+    n = 16
+    Mean = 5.438
+    Median = 3.500
+    SD = 4.442
+
+  Mann-Whitney U Test:
+    U statistic = 80.000
+    p-value = 0.7069
+    Significance: ns
+
+  Effect Size:
+    r = -0.0760
+    Effect size: Small
+
+================================================================================
+
+Metric: Max Playability
+--------------------------------------------------------------------------------
+  HB Selected:
+    n = 11
+    Mean = 88.545
+    Median = 87.000
+    SD = 3.643
+  Other:
+    n = 16
+    Mean = 76.688
+    Median = 74.500
+    SD = 8.972
+
+  Mann-Whitney U Test:
+    U statistic = 156.000
+    p-value = 0.0008
+    Significance: ***
+
+  Effect Size:
+    r = 0.6458
+    Effect size: Very Large
+
+================================================================================
+
+Metric: Combined Playability
+--------------------------------------------------------------------------------
+  HB Selected:
+    n = 11
+    Mean = 2603.727
+    Median = 1437.000
+    SD = 2239.685
+  Other:
+    n = 16
+    Mean = 2098.812
+    Median = 1523.500
+    SD = 1985.399
+
+  Mann-Whitney U Test:
+    U statistic = 106.000
+    p-value = 0.3872
+    Significance: ns
+
+  Effect Size:
+    r = 0.1709
+    Effect size: Medium
+
+================================================================================
+
+Metric: Total Data Count
+--------------------------------------------------------------------------------
+  HB Selected:
+    n = 11
+    Mean = 36.182
+    Median = 19.000
+    SD = 32.310
+  Other:
+    n = 16
+    Mean = 30.438
+    Median = 22.500
+    SD = 28.376
+
+  Mann-Whitney U Test:
+    U statistic = 101.500
+    p-value = 0.5190
+    Significance: ns
+
+  Effect Size:
+    r = 0.1282
+    Effect size: Medium
+
+================================================================================
+
+Metric: Average Novelty
+--------------------------------------------------------------------------------
+  HB Selected:
+    n = 11
+    Mean = 1.843
+    Median = 1.834
+    SD = 0.034
+  Other:
+    n = 16
+    Mean = 1.823
+    Median = 1.818
+    SD = 0.125
+
+  Mann-Whitney U Test:
+    U statistic = 102.000
+    p-value = 0.5047
+    Significance: ns
+
+  Effect Size:
+    r = 0.1330
+    Effect size: Medium
+
+================================================================================

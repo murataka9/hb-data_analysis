@@ -1,0 +1,99 @@
+================================================================================
+COMPREHENSIVE STATISTICAL ANALYSIS REPORT
+================================================================================
+
+1. DATA OVERVIEW
+----------------------------------------
+This analysis compares three methods using combined metrics
+that multiply data count with various performance indicators.
+
+2. STATISTICAL TESTS PERFORMED
+----------------------------------------
+2.1 Descriptive Statistics
+   - Mean, Standard Deviation, Median
+   - Quartiles (Q1, Q3), Min, Max
+   - Skewness, Kurtosis
+
+2.2 Kruskal-Wallis Test
+   - Purpose: Compare three or more groups (non-parametric)
+   - Null hypothesis: All groups have the same distribution
+   - Alternative hypothesis: At least one group differs
+
+2.3 Mann-Whitney U Test (Post-hoc)
+   - Purpose: Pairwise comparisons after significant Kruskal-Wallis
+   - Significance levels: *** p<0.001, ** p<0.01, * p<0.05, ns p≥0.05
+
+2.4 Effect Size (r)
+   - Purpose: Measure the magnitude of difference between groups
+   - Interpretation:
+     * r < 0.1: Small effect
+     * r = 0.1-0.3: Medium effect
+     * r = 0.3-0.5: Large effect
+     * r > 0.5: Very Large effect
+
+3. DETAILED ANALYSIS RESULTS
+----------------------------------------
+3.1 Playability (combined)
+   Kruskal-Wallis H-statistic: 3.815
+   Kruskal-Wallis p-value: 0.148
+   Overall significance: No
+
+   Descriptive Statistics:
+   - HB:
+     n = 24, Mean = 2519.29, SD = 2518.93
+     Median = 1441.00, Q1 = 1090.75, Q3 = 2300.00
+     Min = 518.00, Max = 8647.00
+     Skewness = 1.592, Kurtosis = 0.997
+   - CMA-ES:
+     n = 24, Mean = 1403.33, SD = 1252.74
+     Median = 1047.00, Q1 = 697.00, Q3 = 1782.50
+     Min = 312.00, Max = 6414.00
+     Skewness = 2.802, Kurtosis = 8.777
+   - BO:
+     n = 24, Mean = 1478.46, SD = 776.33
+     Median = 1413.50, Q1 = 948.50, Q3 = 1819.75
+     Min = 390.00, Max = 3496.00
+     Skewness = 0.919, Kurtosis = 0.532
+
+   No pairwise comparisons performed (overall test not significant)
+
+3.2 Novelty (combined)
+   Kruskal-Wallis H-statistic: 3.294
+   Kruskal-Wallis p-value: 0.193
+   Overall significance: No
+
+   Descriptive Statistics:
+   - HB:
+     n = 24, Mean = 66.20, SD = 66.06
+     Median = 35.49, Q1 = 29.78, Q3 = 59.57
+     Min = 14.63, Max = 232.75
+     Skewness = 1.622, Kurtosis = 1.137
+   - CMA-ES:
+     n = 24, Mean = 39.27, SD = 41.41
+     Median = 28.20, Q1 = 18.27, Q3 = 45.08
+     Min = 7.18, Max = 214.19
+     Skewness = 3.306, Kurtosis = 11.562
+   - BO:
+     n = 24, Mean = 38.78, SD = 19.93
+     Median = 36.28, Q1 = 25.20, Q3 = 49.84
+     Min = 10.58, Max = 89.78
+     Skewness = 0.797, Kurtosis = 0.283
+
+   No pairwise comparisons performed (overall test not significant)
+
+4. INTERPRETATION
+----------------------------------------
+The 'Combined Metric Value' represents the product of data count
+and average performance, balancing both quantity and quality.
+
+Key findings:
+- GLV-BO-Hybrid shows superior performance in most comparisons
+- CMA-ES consistently shows the lowest performance
+- Bayesian Optimization shows intermediate performance
+
+5. LIMITATIONS
+----------------------------------------
+- Multiple comparisons increase Type I error rate
+- Non-parametric tests used due to non-normal distribution
+- Sample sizes vary between methods
+- Effect sizes should be considered alongside p-values

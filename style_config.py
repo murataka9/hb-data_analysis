@@ -13,11 +13,12 @@ METHODS: List[str] = ['glv_bo_hybrid', 'bo', 'cma_es', 'manual']
 
 # ユニバーサルデザインに配慮した色定義（青・緑系を中心に）
 # 色覚多様性に配慮し、ColorBrewerの色覚安全なパレットを参考にしています
+# customized_violin_analysis.pyで使用されている明るい色を採用
 METHOD_COLORS: Dict[str, str] = {
-    'cma_es': '#0820FA',      # 青系（濃い青）
-    'bo': '#00D2E0',          # 緑系（エメラルドグリーン）
-    'manual': '#A43AD1',      # 青系（明るい青）
-    'glv_bo_hybrid': '#8EFAD5' # 青緑系（ターコイズ）
+    'glv_bo_hybrid': '#87CEEB',  # 水色（明るい、customized_violin_analysis.pyから）
+    'bo': '#FFA500',              # オレンジ（明るい、customized_violin_analysis.pyから）
+    'cma_es': '#98FB98',          # 薄い緑（明るい、customized_violin_analysis.pyから）
+    'manual': '#A43AD1'           # 青系（明るい青）
 }
 
 # 色のリスト（順序付き）
@@ -25,7 +26,7 @@ METHOD_COLOR_LIST: List[str] = [METHOD_COLORS[method] for method in METHODS]
 
 # メソッド名の正式名マッピング
 METHOD_DISPLAY_NAMES: Dict[str, str] = {
-    'glv_bo_hybrid': 'Hummingbird',
+    'glv_bo_hybrid': 'HB',
     'bo': 'BO',
     'cma_es': 'CMA-ES',
     'manual': 'Manual'
@@ -89,7 +90,7 @@ PLOT_CONFIG = {
 # Y軸の範囲設定（データタイプ別）
 Y_AXIS_LIMITS = {
     'tlx': (0, 100),      # NASA-TLX: 0-100
-    'ueq': (1, 7),        # UEQ-S: 1-7
+    'ueq': (-3, 3),       # UEQ-S: -3~3（1-7から変換）
     'sus': (0, 100),      # SUS: 0-100
     'original': (1, 5),   # Original: 1-5
     'ai_original': (1, 5) # AI Original: 1-5
@@ -98,11 +99,25 @@ Y_AXIS_LIMITS = {
 # バイオリンプロットの設定
 VIOLIN_PLOT_CONFIG = {
     'inner': 'box',  # 箱ひげ図を内部に表示
-    'width': 0.7,    # プロットをさらに細くする
+    'width': 0.7,   # プロットの太さを2/3に調整（0.7 * 2/3 ≈ 0.47）
     'scale': 'width',
     'cut': 0,
     'bw': 0.2,  # バンド幅を小さくしてより敏感に（デフォルトは'scott'、小さい値ほど敏感）
     # linewidthは削除（violinの外枠だけを消すため、プロット後に処理）
+}
+
+# バイオリンプロットの色とスタイル設定（customized_violin_analysis.pyの設定を反映）
+VIOLIN_COLOR_CONFIG = {
+    'alpha': 1.0,  # バイオリンの透明度（1.0で鮮やかに表示）
+    'edgecolor': 'none',  # 外枠の色（noneで削除）
+    'median_marker_color': 'white',  # 中央値マーカーの色（白）
+    'median_marker_size': 30,  # 中央値マーカーのサイズ
+    'box_color': 'k',  # 四分位数の箱の色（黒）
+    'box_linewidth': 2,  # 四分位数の箱の線の太さ
+    'whisker_color': 'k',  # ヒゲの色（黒）
+    'whisker_linewidth': 1,  # ヒゲの線の太さ
+    'hatch_linewidth': 0.5,  # ハッチングパターンの線の太さ
+    'hatch_color': 'white',  # ハッチングパターンの色（白、main.py側で使用）
 }
 
 # エラーバー付き棒グラフの設定
@@ -115,7 +130,7 @@ BAR_PLOT_CONFIG = {
 # Y軸の刻み設定（データタイプ別）
 Y_AXIS_TICKS = {
     'tlx': 20,         # NASA-TLX: 20刻み
-    'ueq': 1,          # UEQ-S: 1刻み
+    'ueq': 1,          # UEQ-S: 1刻み（-3~3の範囲）
     'sus': 20,         # SUS: 20刻み（0-100の範囲）
     'original': 1,     # Original: 1刻み
     'ai_original': 1   # AI Original: 1刻み
@@ -155,6 +170,12 @@ GROUPED_PLOT_FIGSIZE = {
     'original': (22, 4),    # Originalのfigure size
     'ai_original': (15, 4)  # AI Originalのfigure size
 }
+
+# customized_violin_analysis.py用のfigure size設定
+CUSTOMIZED_VIOLIN_FIGSIZE = (8, 5)  # 1行2列のプロット用（幅×高さ、幅を2/3に調整）
+
+# average_data_count_statistical_analysis.py用のfigure size設定
+AVERAGE_DATA_COUNT_FIGSIZE = (4, 5)  # バープロット用（幅×高さ）
 
 # 単一プロットの設定（plot_violin_with_box, plot_bar_with_error用）
 SINGLE_PLOT_CONFIG = {

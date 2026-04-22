@@ -47,9 +47,13 @@ def calculate_ueq_scales(df: pd.DataFrame, method_col: str = 'Method') -> pd.Dat
     meta_cols = [col for col in df.columns if col not in ueq_cols]
     result_df = df[meta_cols].copy()
     
-    # PQとHQのスコアを計算（各尺度の平均値）
-    result_df['PQ'] = df[pq_cols].mean(axis=1)
-    result_df['HQ'] = df[hq_cols].mean(axis=1)
+    # UEQスコアを1-7から-3~3に変換（各スコアから4を引く）
+    df_transformed = df[ueq_cols_sorted].copy()
+    df_transformed = df_transformed - 4
+    
+    # PQとHQのスコアを計算（変換後の各尺度の平均値）
+    result_df['PQ'] = df_transformed[pq_cols].mean(axis=1)
+    result_df['HQ'] = df_transformed[hq_cols].mean(axis=1)
     
     return result_df
 

@@ -166,8 +166,11 @@ def plot_violin_with_box(data: pd.DataFrame, value_col: str,
                            **violin_config)
     
     # violinの外枠だけを削除（boxplotは残す）
+    # 色設定をstyle_configから取得
+    color_config = style_config.VIOLIN_COLOR_CONFIG
     for pc in violin.collections:
-        pc.set_edgecolor('none')
+        pc.set_edgecolor(color_config['edgecolor'])
+        pc.set_alpha(color_config['alpha'])
     
     # 色盲対策：各メソッドにパターンを追加（目立たない程度に）
     # 実際にデータに存在するメソッドのみを使用
@@ -382,8 +385,10 @@ def _apply_hatch_patterns(ax, plot_obj, n_questions, n_methods, available_method
                     hatch_pattern = style_config.METHOD_HATCH_PATTERNS.get(method, '')
                     if hatch_pattern:
                         pc.set_hatch(hatch_pattern)
-                        # パターンを目立たない程度にするため、線の太さを細く
-                        pc.set_linewidth(0.5)
+                        # パターンを目立たない程度にするため、線の太さを細く（style_configから取得）
+                        pc.set_linewidth(style_config.VIOLIN_COLOR_CONFIG['hatch_linewidth'])
+                        # ハッチングの色を白に設定（main.py側）
+                        pc.set_edgecolor(style_config.VIOLIN_COLOR_CONFIG['hatch_color'])
     
     # barplotの場合
     elif hasattr(ax, 'patches'):
@@ -397,8 +402,10 @@ def _apply_hatch_patterns(ax, plot_obj, n_questions, n_methods, available_method
                     hatch_pattern = style_config.METHOD_HATCH_PATTERNS.get(method, '')
                     if hatch_pattern:
                         patch.set_hatch(hatch_pattern)
-                        # パターンを目立たない程度にするため、線の太さを細く
-                        patch.set_linewidth(0.5)
+                        # パターンを目立たない程度にするため、線の太さを細く（style_configから取得）
+                        patch.set_linewidth(style_config.VIOLIN_COLOR_CONFIG['hatch_linewidth'])
+                        # ハッチングの色を白に設定（main.py側）
+                        patch.set_edgecolor(style_config.VIOLIN_COLOR_CONFIG['hatch_color'])
 
 
 def _get_patch_positions(ax, question_name, n_methods):
@@ -742,9 +749,12 @@ def _plot_single_grouped_bar(ax, plot_data, question_cols_subset, method_col, da
                            **violin_config)
     
     # violinの外枠だけを削除（boxplotは残す）
+    # 色設定をstyle_configから取得
+    color_config = style_config.VIOLIN_COLOR_CONFIG
     if style_config.GROUPED_PLOT_CONFIG.get('violin_remove_outline', False):
         for pc in violin.collections:
-            pc.set_edgecolor('none')
+            pc.set_edgecolor(color_config['edgecolor'])
+            pc.set_alpha(color_config['alpha'])
     
     # 色盲対策：各メソッドにパターンを追加（目立たない程度に）
     _apply_hatch_patterns(ax, violin, len(question_cols_subset), len(available_methods), available_methods)
@@ -1125,13 +1135,19 @@ def create_legend(output_dir: Optional[Path] = None, dataset_name: str = ''):
             display_name = 'PBO'
         
         patch = Patch(facecolor=style_config.METHOD_COLORS[method], 
-                     edgecolor='black', linewidth=1.5, 
+                     edgecolor='none', linewidth=0, 
                      label=display_name)
-        # 色盲対策：凡例にもパターンを追加
+        # 色盲対策：凡例にもパターンを追加（style_configの設定を使用）
         hatch_pattern = style_config.METHOD_HATCH_PATTERNS.get(method, '')
         if hatch_pattern:
             patch.set_hatch(hatch_pattern)
-            patch.set_linewidth(0.5)
+            patch.set_linewidth(style_config.VIOLIN_COLOR_CONFIG['hatch_linewidth'])
+            # ハッチングパターンの色を白に設定（main側と同じ）
+            patch.set_edgecolor(style_config.VIOLIN_COLOR_CONFIG['hatch_color'])
+        else:
+            # ハッチングパターンがない場合も枠線を透明化
+            patch.set_edgecolor('none')
+            patch.set_linewidth(0)
         legend_elements.append(patch)
     
     # 凡例を表示
@@ -1172,10 +1188,8 @@ def generate_plots(data_dir: Path, output_dir: Path, dataset_name: str = ''):
     if log_file.exists():
         log_file.unlink()
     
-    # 凡例を作成（データセットごとに）
-    legend_filename = f'legend_{dataset_name}.pdf' if dataset_name else 'legend.pdf'
-    if not (output_dir / legend_filename).exists():
-        create_legend(output_dir, dataset_name)
+    # 凡例を作成（データセットごとに、常に再生成）
+    create_legend(output_dir, dataset_name)
     
     # NASA-TLXデータでテスト（エラーバー付き棒グラフ）
     print(f"NASA-TLXデータでテスト中... ({dataset_name})")

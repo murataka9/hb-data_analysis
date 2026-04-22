@@ -104,6 +104,70 @@ def calculate_cohens_d(group1: np.ndarray, group2: np.ndarray) -> float:
     return cohens_d
 
 
+def calculate_wilcoxon_r(group1: np.ndarray, group2: np.ndarray, 
+                         statistic: float, p_value: float) -> float:
+    """
+    Wilcoxon検定の効果量rを計算します
+    
+    Parameters:
+    -----------
+    group1 : np.ndarray
+        グループ1のデータ（対応データを想定）
+    group2 : np.ndarray
+        グループ2のデータ（対応データを想定）
+    statistic : float
+        Wilcoxon検定の統計量
+    p_value : float
+        Wilcoxon検定のp値
+    
+    Returns:
+    --------
+    float
+        効果量r
+    """
+    n = len(group1)
+    
+    if n < 2:
+        return 0.0
+    
+    # 対応データの場合
+    if len(group1) == len(group2):
+        # Wilcoxon signed-rank testの場合
+        # 統計量Wを正規化してZ値を計算
+        # 平均: μ = n(n+1)/4
+        # 分散: σ² = n(n+1)(2n+1)/24
+        mean_w = n * (n + 1) / 4.0
+        var_w = n * (n + 1) * (2 * n + 1) / 24.0
+        
+        if var_w <= 0:
+            return 0.0
+        
+        std_w = np.sqrt(var_w)
+        z = (statistic - mean_w) / std_w
+        
+        # r = Z / sqrt(N)
+        r = z / np.sqrt(n)
+    else:
+        # Mann-Whitney U検定の場合（対応のないデータ）
+        # この場合はCohen's dを使用する方が適切だが、
+        # 一貫性のためにrを計算する方法も提供
+        n1, n2 = len(group1), len(group2)
+        # U統計量からZ値を計算
+        mean_u = n1 * n2 / 2.0
+        var_u = n1 * n2 * (n1 + n2 + 1) / 12.0
+        
+        if var_u <= 0:
+            return 0.0
+        
+        std_u = np.sqrt(var_u)
+        z = (statistic - mean_u) / std_u
+        
+        # r = Z / sqrt(N)
+        r = z / np.sqrt(n1 + n2)
+    
+    return r
+
+
 def perform_wilcoxon_test(group1: np.ndarray, group2: np.ndarray, 
                          alternative: str = 'two-sided') -> Tuple[float, float]:
     """
@@ -264,15 +328,15 @@ def analyze_group_comparisons(data: pd.DataFrame, value_col: str,
         # Wilcoxon検定（対応ありのデータを想定）
         statistic, p_value = perform_wilcoxon_test(group1, group2)
         
-        # Cohen's d
-        cohens_d = calculate_cohens_d(group1, group2)
+        # Wilcoxon検定の効果量rを計算
+        effect_r = calculate_wilcoxon_r(group1, group2, statistic, p_value)
         
-        # 効果量の解釈
-        if abs(cohens_d) < 0.2:
+        # 効果量の解釈（rの場合）
+        if abs(effect_r) < 0.1:
             effect_size = "negligible"
-        elif abs(cohens_d) < 0.5:
+        elif abs(effect_r) < 0.3:
             effect_size = "small"
-        elif abs(cohens_d) < 0.8:
+        elif abs(effect_r) < 0.5:
             effect_size = "medium"
         else:
             effect_size = "large"
@@ -293,7 +357,7 @@ def analyze_group_comparisons(data: pd.DataFrame, value_col: str,
             'std2': std2,
             'statistic': statistic,
             'p_value': p_value,
-            'cohens_d': cohens_d,
+            'effect_r': effect_r,
             'effect_size': effect_size
         })
     
@@ -454,7 +518,8 @@ def format_result_string(row: pd.Series, data_name: str = '') -> str:
     std2 = row['std2']
     # 補正後のp値（p_adjusted）を優先的に使用
     p_value = row.get('p_adjusted', row.get('p_value', 1.0))
-    cohens_d = row['cohens_d']
+    # Wilcoxon検定の効果量rを使用（後方互換性のためcohens_dもチェック）
+    effect_r = row.get('effect_r', row.get('cohens_d', 0.0))
     
     # 方向性に応じて順序を決定
     if mean1 > mean2:
@@ -472,7 +537,7 @@ def format_result_string(row: pd.Series, data_name: str = '') -> str:
     
     p_str = format_p_value(p_value)
     
-    result = f"{data_name} {direction} {mean_high:.2f} ± {std_high:.2f} vs {mean_low:.2f} ± {std_low:.2f} {p_str} 𝑑𝑧 = {cohens_d:.2f}"
+    result = f"{data_name} {direction} {mean_high:.2f} ± {std_high:.2f} vs {mean_low:.2f} ± {std_low:.2f} {p_str} r = {effect_r:.2f}"
     
     return result
 

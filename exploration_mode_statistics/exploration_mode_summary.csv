@@ -1,0 +1,15 @@
+category,subcategory,item,count
+全体,style_change,bold,216
+全体,style_change,standard,64
+全体,style_change,cautious,109
+手法別,glv_bo_hybrid,bold,216
+手法別,glv_bo_hybrid,standard,64
+手法別,glv_bo_hybrid,cautious,109
+フェーズ別,practice,bold,46
+フェーズ別,practice,standard,31
+フェーズ別,practice,cautious,37
+フェーズ別,main,bold,44
+フェーズ別,main,standard,33
+フェーズ別,main,cautious,35
+フェーズ別,unknown,cautious,37
+フェーズ別,unknown,bold,126

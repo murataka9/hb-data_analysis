@@ -1,0 +1,178 @@
+================================================================================
+Alphaパラメーター変更とUX指標の相関分析レポート
+================================================================================
+
+1. データ概要
+--------------------------------------------------------------------------------
+総ユーザー数: 20
+Best HBユーザー数: 5
+その他のユーザー数: 15
+
+2. Best HBユーザーの特徴（上位25%のPlayability）
+--------------------------------------------------------------------------------
+
+2.1 Alphaパラメーター使用パターン:
+  total_changes:
+    Mean = 9.200, Median = 9.000
+    SD = 4.382, Range = [3.000, 15.000]
+  bold_pct:
+    Mean = 43.662, Median = 37.500
+    SD = 13.488, Range = [33.333, 66.667]
+  cautious_pct:
+    Mean = 29.202, Median = 25.000
+    SD = 10.395, Range = [20.000, 45.455]
+  standard_pct:
+    Mean = 27.136, Median = 33.333
+    SD = 18.329, Range = [0.000, 46.667]
+  avg_slider_value:
+    Mean = 1.145, Median = 1.133
+    SD = 0.156, Range = [0.909, 1.333]
+  style_variability:
+    Mean = 0.902, Median = 0.835
+    SD = 0.158, Range = [0.743, 1.155]
+
+2.2 Playability指標:
+  avg_playability:
+    Mean = 70.984, Median = 72.138
+    SD = 2.104, Range = [67.875, 72.619]
+  max_playability:
+    Mean = 89.400, Median = 95.000
+    SD = 8.764, Range = [75.000, 95.000]
+  combined_playability:
+    Mean = 5898.600, Median = 6276.000
+    SD = 2378.813, Range = [3050.000, 8647.000]
+  total_data_count:
+    Mean = 83.800, Median = 87.000
+    SD = 35.556, Range = [42.000, 124.000]
+  avg_novelty:
+    Mean = 1.863, Median = 1.860
+    SD = 0.068, Range = [1.798, 1.970]
+
+3. AlphaパラメーターとPlayability指標の相関分析
+--------------------------------------------------------------------------------
+
+有意な相関（p < 0.05）は見つかりませんでした
+
+全ての相関:
+  total_changes ↔ avg_playability:
+    Pearson r = 0.272, p = 0.2458
+    Spearman ρ = 0.177, p = 0.4547
+  total_changes ↔ max_playability:
+    Pearson r = 0.175, p = 0.4615
+    Spearman ρ = 0.151, p = 0.5251
+  total_changes ↔ combined_playability:
+    Pearson r = 0.288, p = 0.2190
+    Spearman ρ = 0.233, p = 0.3233
+  total_changes ↔ avg_novelty:
+    Pearson r = 0.196, p = 0.4087
+    Spearman ρ = 0.235, p = 0.3184
+  total_changes ↔ total_data_count:
+    Pearson r = 0.283, p = 0.2274
+    Spearman ρ = 0.264, p = 0.2608
+  bold_pct ↔ avg_playability:
+    Pearson r = -0.172, p = 0.4675
+    Spearman ρ = -0.163, p = 0.4930
+  bold_pct ↔ max_playability:
+    Pearson r = -0.214, p = 0.3652
+    Spearman ρ = -0.129, p = 0.5868
+  bold_pct ↔ combined_playability:
+    Pearson r = -0.126, p = 0.5960
+    Spearman ρ = -0.039, p = 0.8691
+  bold_pct ↔ avg_novelty:
+    Pearson r = -0.237, p = 0.3133
+    Spearman ρ = -0.390, p = 0.0893
+  bold_pct ↔ total_data_count:
+    Pearson r = -0.126, p = 0.5979
+    Spearman ρ = -0.017, p = 0.9430
+  cautious_pct ↔ avg_playability:
+    Pearson r = 0.058, p = 0.8071
+    Spearman ρ = -0.044, p = 0.8537
+  cautious_pct ↔ max_playability:
+    Pearson r = 0.160, p = 0.5000
+    Spearman ρ = 0.102, p = 0.6690
+  cautious_pct ↔ combined_playability:
+    Pearson r = 0.023, p = 0.9217
+    Spearman ρ = 0.023, p = 0.9240
+  cautious_pct ↔ avg_novelty:
+    Pearson r = 0.128, p = 0.5906
+    Spearman ρ = 0.121, p = 0.6120
+  cautious_pct ↔ total_data_count:
+    Pearson r = 0.025, p = 0.9157
+    Spearman ρ = 0.003, p = 0.9911
+  standard_pct ↔ avg_playability:
+    Pearson r = 0.189, p = 0.4248
+    Spearman ρ = 0.199, p = 0.4008
+  standard_pct ↔ max_playability:
+    Pearson r = 0.117, p = 0.6230
+    Spearman ρ = 0.133, p = 0.5772
+  standard_pct ↔ combined_playability:
+    Pearson r = 0.164, p = 0.4892
+    Spearman ρ = 0.163, p = 0.4913
+  standard_pct ↔ avg_novelty:
+    Pearson r = 0.197, p = 0.4059
+    Spearman ρ = 0.309, p = 0.1849
+  standard_pct ↔ total_data_count:
+    Pearson r = 0.161, p = 0.4983
+    Spearman ρ = 0.181, p = 0.4447
+  avg_slider_value ↔ avg_playability:
+    Pearson r = -0.127, p = 0.5938
+    Spearman ρ = 0.025, p = 0.9168
+  avg_slider_value ↔ max_playability:
+    Pearson r = -0.201, p = 0.3959
+    Spearman ρ = -0.085, p = 0.7212
+  avg_slider_value ↔ combined_playability:
+    Pearson r = -0.084, p = 0.7263
+    Spearman ρ = -0.039, p = 0.8692
+  avg_slider_value ↔ avg_novelty:
+    Pearson r = -0.198, p = 0.4016
+    Spearman ρ = -0.278, p = 0.2347
+  avg_slider_value ↔ total_data_count:
+    Pearson r = -0.084, p = 0.7246
+    Spearman ρ = -0.025, p = 0.9178
+  style_variability ↔ avg_playability:
+    Pearson r = -0.096, p = 0.7326
+    Spearman ρ = -0.258, p = 0.3526
+  style_variability ↔ max_playability:
+    Pearson r = 0.004, p = 0.9879
+    Spearman ρ = 0.016, p = 0.9542
+  style_variability ↔ combined_playability:
+    Pearson r = 0.013, p = 0.9644
+    Spearman ρ = 0.149, p = 0.5964
+  style_variability ↔ avg_novelty:
+    Pearson r = -0.151, p = 0.5914
+    Spearman ρ = -0.183, p = 0.5140
+  style_variability ↔ total_data_count:
+    Pearson r = 0.011, p = 0.9682
+    Spearman ρ = 0.174, p = 0.5344
+
+4. Best HBユーザー vs その他のユーザーの比較
+--------------------------------------------------------------------------------
+
+有意差がある指標（p < 0.05）: 3件
+
+  max_playability:
+    Best HB: n=5, mean=89.400, median=95.000, SD=8.764
+    その他: n=15, mean=79.000, median=80.000, SD=9.614
+    p-value = 0.0393
+
+  combined_playability:
+    Best HB: n=5, mean=5898.600, median=6276.000, SD=2378.813
+    その他: n=15, mean=1288.400, median=1348.000, SD=390.591
+    p-value = 0.0001
+
+  total_data_count:
+    Best HB: n=5, mean=83.800, median=87.000, SD=35.556
+    その他: n=15, mean=18.533, median=18.000, SD=5.489
+    p-value = 0.0012
+
+5. 結論と考察
+--------------------------------------------------------------------------------
+
+主要な知見:
+
+- Best HBユーザー（上位25%のPlayability）は、以下の指標で有意に高い値を示しました:
+  * max_playability
+  * combined_playability
+  * total_data_count
+
+================================================================================
